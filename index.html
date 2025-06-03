@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reiko Hotel</title>
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Hide scrollbars completely */
+        ::-webkit-scrollbar { display: none; }
+        html { scrollbar-width: none; -ms-overflow-style: none; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #f6f4e8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Progressive loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 9999;
+            animation: awaken 4s ease-out forwards;
+        }
+
+        @keyframes awaken {
+            0% { background: #000000; }
+            25% { background: #333333; }
+            50% { background: #666666; }
+            75% { background: #999999; }
+            90% { background: #cccccc; }
+            100% { background: #f6f4e8; opacity: 0; visibility: hidden; }
+        }
+
+        /* Container */
+        .container {
+            padding: 120px 20% 60px 80px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Room breathing - back to subtle */
+        .container.breathing {
+            animation: room-breathe 8s ease-in-out infinite;
+        }
+
+        @keyframes room-breathe {
+            0%, 100% { 
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.003);
+                filter: brightness(1.02);
+            }
+        }
+
+        /* Logo placeholder */
+        .logo {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            border: 2px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 8px;
+            text-align: center;
+            opacity: 0.5;
+        }
+
+        /* Room number */
+        .room-number {
+            position: absolute;
+            top: 120px;
+            right: 40px;
+            color: #888;
+            font-size: 18px;
+            opacity: 0.7;
+        }
+
+        /* Visit acknowledgment - back to subtle */
+        .visit-info {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: #aaa;
+            font-size: 11px;
+            opacity: 0;
+            transition: opacity 2s ease;
+            max-width: 350px;
+            z-index: 50;
+        }
+
+        .visit-info.show {
+            opacity: 0.6;
+        }
+
+        /* Date tabs for saved entries */
+        .date-tabs {
+            position: absolute;
+            top: 80px;
+            left: 30px;
+            max-width: 180px;
+            z-index: 50;
+        }
+
+        .date-tab {
+            background: rgba(240, 240, 240, 0.2);
+            padding: 3px 6px;
+            margin: 1px 0;
+            font-size: 9px;
+            color: #aaa;
+            cursor: pointer;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .date-tab:hover {
+            opacity: 0.8;
+            background: rgba(240, 240, 240, 0.3);
+        }
+
+        .date-tab.expanded {
+            background: rgba(240, 240, 240, 0.3);
+        }
+
+        .date-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            padding: 0 6px;
+            font-size: 8px;
+            color: #bbb;
+            line-height: 1.3;
+        }
+
+        .date-content.show {
+            max-height: 150px;
+            padding: 6px;
+        }
+
+        .collapse-arrow {
+            float: right;
+            font-size: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .date-tab.expanded .collapse-arrow {
+            transform: rotate(90deg);
+        }
+
+        /* Text area with cursor starting 5 lines down */
+        .text-area {
+            width: 100%;
+            min-height: 70vh;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 25.6px;
+            color: #333;
+            resize: none;
+            caret-color: #4a6fa5;
+            padding-top: 128px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .angry {
+            caret-color: #cc4444;
+        }
+
+        .sad {
+            caret-color: #4477cc;
+        }
+
+        .happy {
+            caret-color: #44cc44;
+        }
+
+        /* Past echoes - at cursor position */
+        .past-echo {
+            position: absolute;
+            color: #d0d0d0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+            animation: echo-fade 3s ease-in-out forwards;
+        }
+
+        @keyframes echo-fade {
+            0% { opacity: 0; }
+            25% { opacity: 0.3; }
+            75% { opacity: 0.2; }
+            100% { opacity: 0; }
+        }
+
+        /* Ephemeral phrases */
+        .ephemeral-phrase {
+            position: absolute;
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            animation: phrase-appear 3s ease-in-out forwards;
+        }
+
+        @keyframes phrase-appear {
+            0% { opacity: 0; transform: translateY(5px); }
+            30% { opacity: 0.4; transform: translateY(0); }
+            70% { opacity: 0.3; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-5px); }
+        }
+
+        /* Remember visits prompt - positioned dynamically */
+        .remember-prompt {
+            position: absolute;
+            background: rgba(240, 240, 240, 0.5);
+            border: 1px solid rgba(200, 200, 200, 0.7);
+            border-radius: 20px;
+            padding: 8px 20px;
+            color: #888;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            opacity: 0;
+            transition: opacity 2s ease;
+            cursor: pointer;
+            z-index: 1000;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .remember-prompt.show {
+            opacity: 0.8;
+        }
+
+        .remember-prompt:hover {
+            opacity: 1;
+            background: rgba(230, 230, 230, 0.7);
+        }
+
+        /* Registration page overlay */
+        .registration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(246, 244, 232, 0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .registration-overlay.show {
+            display: flex;
+        }
+
+        .registration-form {
+            background: #f6f4e8;
+            padding: 24px;
+            border: 1px solid #ddd;
+            border-radius: 2px;
+            max-width: 240px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .registration-form h2 {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: normal;
+        }
+
+        .registration-form p {
+            font-family: 'Courier New', monospace;
+            font-size: 7px;
+            color: #888;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 9px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-family: 'Courier New', monospace;
+            font-size: 6px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 7px;
+            color: #333;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #999;
+        }
+
+        .form-buttons {
+            margin-top: 15px;
+        }
+
+        .form-buttons button {
+            font-family: 'Courier New', monospace;
+            font-size: 7px;
+            padding: 5px 12px;
+            margin: 0 6px;
+            border: 1px solid #999;
+            background: #f0f0f0;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-buttons button:hover {
+            background: #e0e0e0;
+        }
+
+        .form-buttons .primary {
+            background: #ddd;
+        }
+
+        .privacy-note {
+            font-size: 5px;
+            color: #999;
+            margin-top: 9px;
+            line-height: 1.3;
+        }
+
+        /* Evolving room view - abstract window */
+        .room-view {
+            position: absolute;
+            top: 200px;
+            right: 50px;
+            width: 120px;
+            height: 80px;
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 5s ease;
+            z-index: 5;
+        }
+
+        .room-view.visible {
+            opacity: 0.4;
+        }
+
+        .room-view canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Childhood wonder moments - rare drifting shapes */
+        .wonder-shape {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 3;
+            font-size: 12px;
+            color: #ddd;
+            animation: drift-across 8s linear forwards;
+        }
+
+        .wonder-shape.bubble {
+            animation: bubble-float 12s ease-in-out forwards;
+        }
+
+        @keyframes drift-across {
+            0% { 
+                opacity: 0; 
+                transform: translateX(-50px) translateY(0px);
+            }
+            10% { 
+                opacity: 0.3; 
+            }
+            90% { 
+                opacity: 0.2; 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(calc(100vw + 50px)) translateY(-20px);
+            }
+        }
+
+        @keyframes bubble-float {
+            0% { 
+                opacity: 0; 
+                transform: translateX(-50px) translateY(0px);
+            }
+            10% { 
+                opacity: 0.4; 
+            }
+            25% { 
+                transform: translateX(20vw) translateY(-10px);
+            }
+            50% { 
+                transform: translateX(40vw) translateY(5px);
+            }
+            75% { 
+                transform: translateX(60vw) translateY(-15px);
+            }
+            90% { 
+                opacity: 0.3; 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateX(calc(100vw + 50px)) translateY(-25px);
+            }
+        }
+        .bottom-links {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            font-size: 9px;
+            color: #999;
+            opacity: 0.6;
+            z-index: 100;
+        }
+
+        .bottom-links a {
+            color: #999;
+            text-decoration: none;
+            margin-left: 15px;
+            transition: opacity 0.3s ease;
+        }
+
+        .bottom-links a:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay"></div>
+    
+    <!-- Simple visible line -->
+    <div style="position: fixed; right: 12%; top: 150px; bottom: 0; width: 1px; background: #ccc; opacity: 0.4; z-index: 1;"></div>
+    
+    <div class="container" id="container">
+        
+        <!-- Visit acknowledgment -->
+        <div class="visit-info" id="visitInfo">
+            You last checked in at: Today 2:30 PM. Checked out at: Today 2:45 PM. Duration: 15 minutes.
+        </div>
+        
+        <!-- Date tabs for saved entries -->
+        <div class="date-tabs" id="dateTabs">
+            <div class="date-tab" onclick="toggleDateContent(this)">
+                Yesterday <span class="collapse-arrow">→</span>
+                <div class="date-content">I was thinking about the rain today, how it changes everything...</div>
+            </div>
+            <div class="date-tab" onclick="toggleDateContent(this)">
+                Two days ago <span class="collapse-arrow">→</span>
+                <div class="date-content">The silence here feels different. More present somehow.</div>
+            </div>
+            <div class="date-tab" onclick="toggleDateContent(this)">
+                Last week <span class="collapse-arrow">→</span>
+                <div class="date-content">Sometimes I wonder about time and how it moves through us.</div>
+            </div>
+        </div>
+        
+        <div class="logo">
+            YOUR LOGO<br>WILL BE<br>HERE
+        </div>
+        
+        <div class="room-number">Room 201</div>
+        
+        <textarea class="text-area" id="textArea" spellcheck="false" placeholder=""></textarea>
+        
+        <!-- Evolving room view -->
+        <div class="room-view" id="roomView">
+            <canvas id="roomCanvas" width="120" height="80"></canvas>
+        </div>
+        
+        <!-- Remember visits prompt -->
+        <div class="remember-prompt" id="rememberPrompt">
+            Timestamp your visits?
+        </div>
+        
+    </div>
+    
+    <!-- Registration overlay -->
+    <div class="registration-overlay" id="registrationOverlay">
+        <div class="registration-form">
+            <h2>Resume the Residence</h2>
+            <p>By creating a unique key for Room <span id="roomNumberInForm">201</span>, Reiko Hotel can permanently remember your visits and your thoughts, ensuring your journey through stillness is always recorded.</p>
+            
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="email">Your Private Key (Email):</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Confirm Your Key (Password):</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="button" onclick="closeRegistration()">Cancel</button>
+                    <button type="submit" class="primary">Forge My Key</button>
+                </div>
+            </form>
+            
+            <div class="privacy-note">
+                Your private key is for personal log access only. Your data will never be shared or used for marketing.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Donation overlay -->
+    <div class="registration-overlay" id="donationOverlay">
+        <div class="registration-form">
+            <h2>Sustain the Stillness</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <button class="form-buttons button" onclick="selectAmount(5)">$5</button>
+                <button class="form-buttons button" onclick="selectAmount(10)">$10</button>
+                <button class="form-buttons button" onclick="selectAmount(25)">$25</button>
+                <button class="form-buttons button" onclick="selectAmount(50)">$50</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="customAmount">Custom Amount ($):</label>
+                <input type="number" id="customAmount" name="customAmount" min="1" max="1000">
+            </div>
+            
+            <div class="form-group">
+                <label for="donorEmail">Your Email (for thank you note):</label>
+                <input type="email" id="donorEmail" name="donorEmail" required>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="button" onclick="closeDonation()">Cancel</button>
+                <button type="button" class="primary" onclick="processDonation()">Donate</button>
+            </div>
+            
+            <div class="privacy-note">
+                Your email is only used to send a thank you note. Payments processed securely via Stripe.
+            </div>
+        </div>
+    </div>
+    
+    
+    <!-- Bottom links -->
+    <div class="bottom-links">
+        <a href="#" onclick="showSustainPage(); return false;">Sustain the Stillness</a>
+        <a href="#" onclick="showGiftShop()">Sustenance Garden</a>
+    </div>
+
+    <script>
+        const textArea = document.getElementById('textArea');
+        const container = document.getElementById('container');
+        const visitInfo = document.getElementById('visitInfo');
+        const rememberPrompt = document.getElementById('rememberPrompt');
+        const registrationOverlay = document.getElementById('registrationOverlay');
+        const donationOverlay = document.getElementById('donationOverlay');
+        const roomView = document.getElementById('roomView');
+        const roomCanvas = document.getElementById('roomCanvas');
+        
+        let selectedAmount = 0;
+        
+        let lastKeyTime = Date.now();
+        let keyCount = 0;
+        let silenceTimer;
+        let roomBreathingActive = false;
+        let lastTypedLine = '';
+        let pauseEchoTimer;
+        let hoverTimeout;
+        let timeSpentInRoom = 0;
+        let sessionStartTime = Date.now();
+        let totalVisits = 0;
+        let roomEvolutionStage = 0;
+        let promptShownCount = 0;
+        let currentRoomId = null;
+        let wonderShapeTimer = null;
+        let dailyResetTimer = null;
+
+        // Childhood wonder moments - extremely rare shapes
+        function triggerWonderMoment() {
+            if (Math.random() < 0.001) { // Back to 0.1% chance
+                const shapes = ['✈', '○', '◦', '∘', '⋄'];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                
+                const wonderDiv = document.createElement('div');
+                wonderDiv.className = 'wonder-shape';
+                
+                // Add bubble class for bobbing animation
+                if (shape === '○' || shape === '◦' || shape === '∘') {
+                    wonderDiv.classList.add('bubble');
+                }
+                
+                wonderDiv.textContent = shape;
+                wonderDiv.style.top = (Math.random() * 40 + 20) + '%';
+                wonderDiv.style.left = '-50px';
+                
+                document.body.appendChild(wonderDiv);
+                
+                // Longer timeout for bubble animation
+                const duration = wonderDiv.classList.contains('bubble') ? 12000 : 8000;
+                setTimeout(() => {
+                    if (document.body.contains(wonderDiv)) {
+                        document.body.removeChild(wonderDiv);
+                    }
+                }, duration);
+            }
+        }
+
+        // Ambient sounds - rare seagulls and distant trains
+        function playAmbientSound() {
+            if (Math.random() < 0.8) { // TEMP: 80% chance for testing
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const soundType = Math.random() < 0.5 ? 'seagull' : 'train';
+                    
+                    if (soundType === 'seagull') {
+                        // Seagull cry - higher pitch, varying
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const panner = ctx.createStereoPanner();
+                        
+                        osc.connect(gain);
+                        gain.connect(panner);
+                        panner.connect(ctx.destination);
+                        
+                        // Pan from left to right
+                        panner.pan.setValueAtTime(-0.8, ctx.currentTime);
+                        panner.pan.linearRampToValueAtTime(0.8, ctx.currentTime + 2);
+                        
+                        osc.frequency.setValueAtTime(800, ctx.currentTime);
+                        osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.2);
+                        osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.8);
+                        osc.type = 'sine';
+                        
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.02, ctx.currentTime + 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
+                        
+                        osc.start();
+                        osc.stop(ctx.currentTime + 2);
+                        
+                    } else {
+                        // Distant train - low rumble
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.frequency.value = 80;
+                        osc.type = 'sawtooth';
+                        
+                        gain.gain.setValueAtTime(0, ctx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.008, ctx.currentTime + 1);
+                        gain.gain.linearRampToValueAtTime(0.008, ctx.currentTime + 4);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 8);
+                        
+                        osc.start();
+                        osc.stop(ctx.currentTime + 8);
+                    }
+                } catch (e) {
+                    console.log('Audio not available');
+                }
+            }
+        }
+        function checkDailyReset() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            if (hour === 4 && minute === 0) {
+                container.style.transition = 'filter 10s ease, transform 10s ease';
+                container.style.filter = 'brightness(1.05)';
+                container.style.transform = 'scale(1.002)';
+                
+                setTimeout(() => {
+                    container.style.filter = 'brightness(1)';
+                    container.style.transform = 'scale(1)';
+                }, 10000);
+            }
+        }
+
+        // Room assignment and URL management
+        function assignRoom() {
+            const path = window.location.pathname;
+            const roomMatch = path.match(/\/room\/(\d+)/);
+            
+            if (roomMatch) {
+                // Direct visit to room URL
+                currentRoomId = parseInt(roomMatch[1]);
+                return currentRoomId;
+            } else {
+                // Base domain visit - assign new room
+                let lastRoomId = localStorage.getItem('lastRoomId');
+                if (!lastRoomId) {
+                    lastRoomId = 200; // Start from 200, first room will be 201
+                } else {
+                    lastRoomId = parseInt(lastRoomId);
+                }
+                
+                currentRoomId = lastRoomId + 1;
+                localStorage.setItem('lastRoomId', currentRoomId);
+                
+                // Redirect to room URL
+                const newUrl = `/room/${currentRoomId}`;
+                window.history.replaceState({}, '', newUrl);
+                
+                return currentRoomId;
+            }
+        }
+
+        // Initialize room with Supabase integration
+        async function initializeRoom() {
+            try {
+                currentRoomNumber = await assignRoom();
+                console.log('Room assigned:', currentRoomNumber);
+                
+                document.querySelector('.room-number').textContent = `Room ${currentRoomNumber}`;
+                document.getElementById('roomNumberInForm').textContent = currentRoomNumber;
+                
+                // Start visit tracking if we have Supabase and room ID
+                // TODO: Re-enable visit tracking after fixing function order
+                console.log('Room initialization complete - visit tracking disabled for now');
+                
+                console.log('Room initialization complete');
+            } catch (error) {
+                console.log('Room init error:', error);
+                // Fallback
+                document.querySelector('.room-number').textContent = 'Room 201';
+                document.getElementById('roomNumberInForm').textContent = '201';
+            }
+        }
+
+        // Get accurate cursor position for positioning elements
+        function getCursorPosition() {
+            const textArea = document.getElementById('textArea');
+            const rect = textArea.getBoundingClientRect();
+            const selectionStart = textArea.selectionStart;
+            const textBeforeCursor = textArea.value.substring(0, selectionStart);
+            const lines = textBeforeCursor.split('\n');
+            const currentLineIndex = lines.length - 1;
+            const charInCurrentLine = lines[currentLineIndex].length;
+            
+            const charWidth = 9.6; // Courier New character width at 16px
+            const lineHeight = 25.6; // Exact line height
+            
+            const x = rect.left + window.scrollX + (charInCurrentLine * charWidth);
+            const y = rect.top + window.scrollY + (currentLineIndex * lineHeight) + 128; // Include padding
+            
+            return { x, y, lineIndex: currentLineIndex, charIndex: charInCurrentLine };
+        }
+
+        // Show timestamp prompt with better positioning
+        function showTimestampPrompt() {
+            playChime();
+            
+            const cursorPos = getCursorPosition();
+            
+            // Position 4 lines below current cursor
+            const promptX = cursorPos.x;
+            const promptY = cursorPos.y + (4 * 25.6);
+            
+            rememberPrompt.style.position = 'absolute';
+            rememberPrompt.style.left = promptX + 'px';
+            rememberPrompt.style.top = promptY + 'px';
+            rememberPrompt.style.transform = 'none';
+            
+            rememberPrompt.classList.add('show');
+            
+            setTimeout(() => {
+                rememberPrompt.classList.remove('show');
+            }, 15000);
+        }
+
+        // Show past echo at exact cursor position
+        function showPastEchoAtCursor() {
+            if (!lastTypedLine) return;
+            
+            const cursorPos = getCursorPosition();
+            
+            const echo = document.createElement('div');
+            echo.className = 'past-echo';
+            echo.textContent = lastTypedLine;
+            echo.style.position = 'absolute';
+            echo.style.left = cursorPos.x + 'px';
+            echo.style.top = cursorPos.y + 'px';
+            echo.style.zIndex = '5';
+            
+            document.body.appendChild(echo);
+            
+            setTimeout(() => {
+                if (document.body.contains(echo)) {
+                    document.body.removeChild(echo);
+                }
+            }, 3000);
+        }
+
+        const angry = ['angry', 'hate', 'fuck', 'shit', 'mad'];
+        const sad = ['sad', 'miss', 'remember', 'lonely'];
+        const happy = ['love', 'happy', 'joy', 'beautiful'];
+        const ephemeralPhrases = ['Breathe', 'Exist', 'Be Still', 'Present', 'Here', 'Now', 'Quiet', 'Within'];
+
+        // Initialize with async room setup
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Page loaded, starting initialization...');
+            
+            // Initialize room with error handling
+            try {
+                await initializeRoom();
+            } catch (e) {
+                console.log('Room init failed, using default room 201');
+                document.querySelector('.room-number').textContent = 'Room 201';
+                document.getElementById('roomNumberInForm').textContent = '201';
+            }
+            
+            // Wonder moments working
+            triggerWonderMoment(); // One immediate test
+            
+            // TEST: Immediate ambient sound
+            setTimeout(() => {
+                console.log('Testing ambient sound...');
+                playAmbientSound();
+            }, 2000);
+            
+            // Show visit info after loading
+            setTimeout(() => {
+                visitInfo.classList.add('show');
+                setTimeout(() => {
+                    visitInfo.classList.remove('show');
+                }, 8000);
+            }, 2000);
+
+            // Focus text area
+            setTimeout(() => {
+                textArea.focus();
+            }, 4500);
+
+            // Start silence tracking
+            startSilenceTracking();
+            
+            // Start room evolution tracking
+            updateRoomEvolution();
+            setTimeout(() => {
+                roomView.classList.add('visible');
+            }, 10000);
+            
+            // Start wonder moments and daily reset checking
+            wonderShapeTimer = setInterval(triggerWonderMoment, 30000);
+            dailyResetTimer = setInterval(checkDailyReset, 60000);
+            
+            // Show visit info after loading
+            setTimeout(() => {
+                visitInfo.classList.add('show');
+                setTimeout(() => {
+                    visitInfo.classList.remove('show');
+                }, 8000);
+            }, 2000);
+
+            // Focus text area
+            setTimeout(() => {
+                textArea.focus();
+            }, 4500);
+
+            // Start silence tracking
+            startSilenceTracking();
+            
+            // Start room evolution tracking
+            updateRoomEvolution();
+            setTimeout(() => {
+                roomView.classList.add('visible');
+            }, 10000);
+            
+            // Start wonder moments and daily reset checking
+            wonderShapeTimer = setInterval(triggerWonderMoment, 3000); // TEMP: Check every 3 seconds
+            dailyResetTimer = setInterval(checkDailyReset, 60000); // Check every minute
+            
+            // Schedule timestamp prompts - 10 and 30 minutes, only twice per session
+            if (promptShownCount < 2) {
+                // First prompt at 10 minutes
+                setTimeout(() => {
+                    if (promptShownCount === 0) {
+                        showTimestampPrompt();
+                        promptShownCount++;
+                        
+                        // Second prompt at 30 minutes  
+                        setTimeout(() => {
+                            if (promptShownCount === 1) {
+                                showTimestampPrompt();
+                                promptShownCount++;
+                            }
+                        }, 1200000); // 20 more minutes = 1200000ms
+                    }
+                }, 600000); // 10 minutes = 600000ms
+            }
+        });
+
+        function startPauseEchoTimer() {
+            clearTimeout(pauseEchoTimer);
+            pauseEchoTimer = setTimeout(() => {
+                if (lastTypedLine) {
+                    showPastEchoAtCursor();
+                }
+            }, 15000);
+        }
+
+        function startSilenceTracking() {
+            silenceTimer = setInterval(() => {
+                const silenceDuration = Date.now() - lastKeyTime;
+                
+                if (silenceDuration > 10000) {
+                    if (!roomBreathingActive) {
+                        container.classList.add('breathing');
+                        roomBreathingActive = true;
+                    }
+                }
+            }, 1000);
+        }
+
+        function resetSilenceTracking() {
+            clearInterval(silenceTimer);
+            clearTimeout(pauseEchoTimer);
+            if (roomBreathingActive) {
+                container.classList.remove('breathing');
+                roomBreathingActive = false;
+            }
+            startSilenceTracking();
+        }
+
+        textArea.addEventListener('input', function() {
+            const text = textArea.value;
+            const lines = text.split('\n');
+            const currentLine = lines[lines.length - 1];
+            const recent = text.toLowerCase().split(' ').slice(-2).join(' ');
+            
+            keyCount++;
+            
+            if (currentLine.trim().length > 5) {
+                lastTypedLine = currentLine.trim();
+            }
+            
+            // Clear all classes
+            textArea.className = 'text-area';
+            
+            // Check sentiment
+            if (angry.some(word => recent.includes(word))) {
+                textArea.classList.add('angry');
+            } else if (sad.some(word => recent.includes(word))) {
+                textArea.classList.add('sad');
+            } else if (happy.some(word => recent.includes(word))) {
+                textArea.classList.add('happy');
+            }
+            
+            lastKeyTime = Date.now();
+            
+            resetSilenceTracking();
+            startPauseEchoTimer();
+            
+            if (keyCount % 50 === 0) {
+                updateRoomEvolution();
+            }
+            
+            // Chime for first 3 keystrokes AND 230-232 keystrokes
+            if (keyCount <= 3 || (keyCount >= 230 && keyCount <= 232)) {
+                playChime();
+            }
+        });
+
+        function playChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.frequency.value = 523;
+                osc.type = 'sine';
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.015, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {
+                console.log('Audio not available');
+            }
+        }
+
+        function updateRoomEvolution() {
+            const currentTime = Date.now();
+            timeSpentInRoom = (currentTime - sessionStartTime) / 1000;
+            
+            const timeWeight = Math.floor(timeSpentInRoom / 300);
+            const visitWeight = totalVisits * 2;
+            const newStage = Math.min(timeWeight + visitWeight, 10);
+            
+            if (newStage > roomEvolutionStage) {
+                roomEvolutionStage = newStage;
+                drawRoomView();
+            }
+        }
+
+        function drawRoomView() {
+            const canvas = roomCanvas;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const stage = roomEvolutionStage;
+            const opacity = Math.min(0.1 + (stage * 0.05), 0.6);
+            
+            const baseHue = (stage * 15) % 360;
+            const color1 = `hsla(${baseHue}, 20%, 80%, ${opacity})`;
+            const color2 = `hsla(${baseHue + 60}, 15%, 75%, ${opacity * 0.7})`;
+            
+            ctx.strokeStyle = color1;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            for (let i = 0; i < stage + 3; i++) {
+                const x1 = (i * 20) % width;
+                const y1 = Math.sin(i * 0.5 + stage * 0.1) * 20 + height / 2;
+                const x2 = ((i + 1) * 20) % width;
+                const y2 = Math.sin((i + 1) * 0.5 + stage * 0.1) * 20 + height / 2;
+                
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+            }
+            ctx.stroke();
+            
+            if (stage > 3) {
+                ctx.fillStyle = color2;
+                for (let i = 0; i < Math.floor(stage / 2); i++) {
+                    const x = (i * 30 + stage * 5) % width;
+                    const y = (i * 25 + stage * 3) % height;
+                    const size = 2 + (stage * 0.5);
+                    ctx.fillRect(x, y, size, size);
+                }
+            }
+            
+            if (stage > 6) {
+                ctx.strokeStyle = `hsla(${baseHue + 120}, 25%, 70%, ${opacity * 0.5})`;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.arc(width / 2, height / 2, stage * 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function showRegistration() {
+            const roomNumber = document.querySelector('.room-number').textContent;
+            document.getElementById('roomNumberInForm').textContent = roomNumber.replace('Room ', '');
+            registrationOverlay.classList.add('show');
+        }
+
+        function closeRegistration() {
+            registrationOverlay.classList.remove('show');
+        }
+
+        function showEphemeralPhrase(x, y) {
+            const phrase = document.createElement('div');
+            phrase.className = 'ephemeral-phrase';
+            phrase.textContent = ephemeralPhrases[Math.floor(Math.random() * ephemeralPhrases.length)];
+            phrase.style.position = 'absolute';
+            phrase.style.left = (x - 20) + 'px';
+            phrase.style.top = (y - 10) + 'px';
+            phrase.style.zIndex = '10';
+            
+            document.body.appendChild(phrase);
+            
+            setTimeout(() => {
+                if (document.body.contains(phrase)) {
+                    document.body.removeChild(phrase);
+                }
+            }, 3000);
+        }
+
+        function toggleDateContent(tab) {
+            const content = tab.querySelector('.date-content');
+            const isExpanded = content.classList.contains('show');
+            
+            document.querySelectorAll('.date-content').forEach(c => c.classList.remove('show'));
+            document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('expanded'));
+            
+            if (!isExpanded) {
+                content.classList.add('show');
+                tab.classList.add('expanded');
+            }
+        }
+
+        function showSustainPage() {
+            donationOverlay.classList.add('show');
+        }
+
+        function closeDonation() {
+            donationOverlay.classList.remove('show');
+            // Reset form
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('customAmount').value = '';
+            document.getElementById('donorEmail').value = '';
+            selectedAmount = 0;
+        }
+
+        function selectAmount(amount) {
+            selectedAmount = amount;
+            // Clear custom amount
+            document.getElementById('customAmount').value = '';
+            // Update button states
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+        }
+
+        function processDonation() {
+            const customAmount = document.getElementById('customAmount').value;
+            const email = document.getElementById('donorEmail').value;
+            
+            // Use custom amount if entered
+            const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
+            
+            if (!finalAmount || finalAmount < 1) {
+                alert('Please select or enter a donation amount');
+                return;
+            }
+            
+            if (!email) {
+                alert('Please enter your email for a thank you note');
+                return;
+            }
+            
+            // TODO: Integrate with Stripe
+            // For now, simulate success
+            alert(`Thank you for your ${finalAmount} donation! A thank you note will be sent to ${email}`);
+            
+            // Record donation (TODO: save to database)
+            console.log('Donation recorded:', {
+                amount: finalAmount,
+                email: email,
+                timestamp: new Date(),
+                roomId: currentRoomId
+            });
+            
+            closeDonation();
+        }
+
+        function showGiftShop() {
+            alert('Sustenance Garden - curated books, stationery, and Reiko Hotel merchandise would open here');
+        }
+
+        textArea.addEventListener('mousemove', function(e) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                if (Math.random() < 0.3) {
+                    showEphemeralPhrase(e.clientX, e.clientY);
+                }
+            }, 3000);
+        });
+
+        textArea.addEventListener('mouseleave', function() {
+            clearTimeout(hoverTimeout);
+        });
+
+        // Click handler for remember prompt
+        rememberPrompt.addEventListener('click', function() {
+            console.log('Prompt clicked');
+            rememberPrompt.classList.remove('show');
+            showRegistration();
+        });
+
+        // Registration form handler
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (email && password) {
+                alert('Key forged successfully! Your journey will now be permanently recorded.');
+                closeRegistration();
+                rememberPrompt.style.display = 'none';
+            }
+        });
+
+        // Handle custom amount input
+        document.getElementById('customAmount').addEventListener('input', function() {
+            if (this.value) {
+                // Clear selected preset amounts
+                document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+                selectedAmount = 0;
+            }
+        });
+    </script>
+</body>
+</html>

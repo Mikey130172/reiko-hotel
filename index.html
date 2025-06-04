@@ -742,10 +742,12 @@ try {
     const { data, error } = await supabase.rpc('assign_new_room');
     if (error) throw error;
     currentRoomId = data;
+    return currentRoomId;  
 } catch (error) {
     console.error('Database error, using fallback:', error);
-    currentRoomId = 201; // Fallback
-}
+    currentRoomId = 201;
+    return currentRoomId;  
+}  
                 
                 // Redirect to room URL
                 const newUrl = `/room/${currentRoomId}`;

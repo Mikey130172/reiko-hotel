@@ -76,22 +76,17 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
 
         /* Logo placeholder */
-        .logo {
-            position: absolute;
-            top: 30px;
-            right: 40px;
-            width: 80px;
-            height: 80px;
-            background: transparent;
-            border: 2px dashed #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #aaa;
-            font-size: 8px;
-            text-align: center;
-            opacity: 0.5;
-        }
+       .logo {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    height: 80px;
+    background-image: url('reiko logo 1');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.7;
+}
 
         /* Room number */
         .room-number {
@@ -486,28 +481,15 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         <!-- Visit acknowledgment -->
         <div class="visit-info" id="visitInfo">
-            Loading your visit history...
+            Welcome to your room.
         </div>
         
         <!-- Date tabs for saved entries -->
-        <div class="date-tabs" id="dateTabs">
-            <div class="date-tab" onclick="toggleDateContent(this)">
-                Yesterday <span class="collapse-arrow">→</span>
-                <div class="date-content">I was thinking about the rain today, how it changes everything...</div>
-            </div>
-            <div class="date-tab" onclick="toggleDateContent(this)">
-                Two days ago <span class="collapse-arrow">→</span>
-                <div class="date-content">The silence here feels different. More present somehow.</div>
-            </div>
-            <div class="date-tab" onclick="toggleDateContent(this)">
-                Last week <span class="collapse-arrow">→</span>
-                <div class="date-content">Sometimes I wonder about time and how it moves through us.</div>
-            </div>
-        </div>
+       <div class="date-tabs" id="dateTabs">
+    <!-- Will be populated from database -->
+</div>
         
-        <div class="logo">
-            YOUR LOGO<br>WILL BE<br>HERE
-        </div>
+       <div class="logo"></div>
         
         <div class="room-number">Room 201</div>
         
@@ -865,6 +847,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             
             // Show visit info after loading
             setTimeout(() => {
+                loadRealVisitHistory();
                 visitInfo.classList.add('show');
                 setTimeout(() => {
                     visitInfo.classList.remove('show');

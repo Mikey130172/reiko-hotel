@@ -727,7 +727,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         }
 
         // Room assignment and URL management
-        function assignRoom() {
+        async function assignRoom() {
             const path = window.location.pathname;
             const roomMatch = path.match(/\/room\/(\d+)/);
             

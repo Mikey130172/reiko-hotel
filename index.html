@@ -7,6 +7,12 @@
     
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+const SUPABASE_URL = 'https://oaqkkigcoybjpufliazk.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcWtraWdjb3lianB1ZmxpYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTAyOTEsImV4cCI6MjA2NDUyNjI5MX0.hGvnVAoyqmgyii1thQe8fzfuoTRoMDmhQ0qPSg4_e0s';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
     <style>
         * {
             margin: 0;
@@ -480,7 +486,7 @@
         
         <!-- Visit acknowledgment -->
         <div class="visit-info" id="visitInfo">
-            You last checked in at: Today 2:30 PM. Checked out at: Today 2:45 PM. Duration: 15 minutes.
+            Loading your visit history...
         </div>
         
         <!-- Date tabs for saved entries -->
@@ -846,6 +852,7 @@
             
             // Initialize room with error handling
             try {
+                await setupDatabase();
                 await initializeRoom();
             } catch (e) {
                 console.log('Room init failed, using default room 201');
@@ -855,12 +862,6 @@
             
             // Wonder moments working
             triggerWonderMoment(); // One immediate test
-            
-            // TEST: Immediate ambient sound
-            setTimeout(() => {
-                console.log('Testing ambient sound...');
-                playAmbientSound();
-            }, 2000);
             
             // Show visit info after loading
             setTimeout(() => {
@@ -1041,7 +1042,51 @@
                 drawRoomView();
             }
         }
+async function loadRealVisitHistory() {
+    try {
+        // For now, just show a basic message since we don't have database tables yet
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        visitInfo.textContent = `Welcome back to Room ${currentRoomId}. Current time: ${timeStr}`;
+    } catch (error) {
+        console.log('Visit history error:', error);
+        visitInfo.textContent = 'Welcome to your room.';
+    }
+}
+async function setupDatabase() {
+    try {
+        // Create visits table
+        const { error: visitsError } = await supabase.rpc('exec', {
+            sql: `
+            CREATE TABLE IF NOT EXISTS visits (
+                id SERIAL PRIMARY KEY,
+                room_number INTEGER NOT NULL,
+                check_in_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                check_out_time TIMESTAMP WITH TIME ZONE,
+                duration_minutes INTEGER,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );`
+        });
 
+        // Create text_entries table
+        const { error: entriesError } = await supabase.rpc('exec', {
+            sql: `
+            CREATE TABLE IF NOT EXISTS text_entries (
+                id SERIAL PRIMARY KEY,
+                room_number INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                session_id INTEGER
+            );`
+        });
+
+        console.log('Database setup complete');
+        return true;
+    } catch (error) {
+        console.log('Database setup failed, using demo mode:', error);
+        return false;
+    }
+}
         function drawRoomView() {
             const canvas = roomCanvas;
             const ctx = canvas.getContext('2d');

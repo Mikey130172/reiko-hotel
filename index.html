@@ -1044,10 +1044,23 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
 async function loadRealVisitHistory() {
     try {
-        // For now, just show a basic message since we don't have database tables yet
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString();
-        visitInfo.textContent = `Welcome back to Room ${currentRoomId}. Current time: ${timeStr}`;
+        const { data, error } = await supabase
+            .from('visits')
+            .select('check_in_time, check_out_time, duration_minutes')
+            .eq('room_number', currentRoomId)
+            .order('check_in_time', { ascending: false })
+            .limit(1);
+
+        if (data && data.length > 0) {
+            const visit = data[0];
+            const checkIn = new Date(visit.check_in_time).toLocaleString();
+            const checkOut = visit.check_out_time ? new Date(visit.check_out_time).toLocaleString() : 'Still here';
+            const duration = visit.duration_minutes ? `${visit.duration_minutes} minutes` : 'Unknown';
+            
+            visitInfo.textContent = `You last checked in at: ${checkIn}. Checked out at: ${checkOut}. Duration: ${duration}.`;
+        } else {
+            visitInfo.textContent = 'Welcome to your new room. This is your first visit.';
+        }
     } catch (error) {
         console.log('Visit history error:', error);
         visitInfo.textContent = 'Welcome to your room.';

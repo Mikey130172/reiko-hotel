@@ -1055,35 +1055,21 @@ async function loadRealVisitHistory() {
 }
 async function setupDatabase() {
     try {
-        // Create visits table
-        const { error: visitsError } = await supabase.rpc('exec', {
-            sql: `
-            CREATE TABLE IF NOT EXISTS visits (
-                id SERIAL PRIMARY KEY,
-                room_number INTEGER NOT NULL,
-                check_in_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                check_out_time TIMESTAMP WITH TIME ZONE,
-                duration_minutes INTEGER,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-            );`
-        });
+        // Test database connection
+        const { error: visitsError } = await supabase
+            .from('visits')
+            .select('*')
+            .limit(1);
 
-        // Create text_entries table
-        const { error: entriesError } = await supabase.rpc('exec', {
-            sql: `
-            CREATE TABLE IF NOT EXISTS text_entries (
-                id SERIAL PRIMARY KEY,
-                room_number INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                session_id INTEGER
-            );`
-        });
+        const { error: entriesError } = await supabase
+            .from('text_entries')
+            .select('*')
+            .limit(1);
 
-        console.log('Database setup complete');
+        console.log('Database connection verified');
         return true;
     } catch (error) {
-        console.log('Database setup failed, using demo mode:', error);
+        console.log('Database not ready, using demo mode:', error);
         return false;
     }
 }

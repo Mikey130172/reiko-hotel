@@ -758,10 +758,10 @@ try {
         // Initialize room with Supabase integration
         async function initializeRoom() {
             try {
-                currentRoomNumber = await assignRoom();
+                currentRoomId = await assignRoom();
                 console.log('Room assigned:', currentRoomNumber);
                 
-                document.querySelector('.room-number').textContent = `Room ${currentRoomNumber}`;
+                document.querySelector('.room-number').textContent = `Room ${currentRoomId}`;
                 document.getElementById('roomNumberInForm').textContent = currentRoomNumber;
                 
                 // Start visit tracking if we have Supabase and room ID

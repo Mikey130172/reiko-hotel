@@ -469,6 +469,12 @@
             opacity: 0.9;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://oaqkkigcoybjpufliazk.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcWtraWdjb3lianB1ZmxpYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTAyOTEsImV4cCI6MjA2NDUyNjI5MX0.hGvnVAoyqmgyii1thQe8fzfuoTRoMDmhQ0qPSg4_e0s'
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+</script>
 </head>
 <body>
     <div class="loading-overlay"></div>
@@ -731,15 +737,15 @@
                 return currentRoomId;
             } else {
                 // Base domain visit - assign new room
-                let lastRoomId = localStorage.getItem('lastRoomId');
-                if (!lastRoomId) {
-                    lastRoomId = 200; // Start from 200, first room will be 201
-                } else {
-                    lastRoomId = parseInt(lastRoomId);
-                }
-                
-                currentRoomId = lastRoomId + 1;
-                localStorage.setItem('lastRoomId', currentRoomId);
+                // Get room from database instead of localStorage
+try {
+    const { data, error } = await supabase.rpc('assign_new_room');
+    if (error) throw error;
+    currentRoomId = data;
+} catch (error) {
+    console.error('Database error, using fallback:', error);
+    currentRoomId = 201; // Fallback
+}
                 
                 // Redirect to room URL
                 const newUrl = `/room/${currentRoomId}`;

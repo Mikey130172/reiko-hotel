@@ -469,12 +469,6 @@
             opacity: 0.9;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = 'https://oaqkkigcoybjpufliazk.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcWtraWdjb3lianB1ZmxpYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTAyOTEsImV4cCI6MjA2NDUyNjI5MX0.hGvnVAoyqmgyii1thQe8fzfuoTRoMDmhQ0qPSg4_e0s'
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-</script>
 </head>
 <body>
     <div class="loading-overlay"></div>
@@ -727,45 +721,41 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         }
 
         // Room assignment and URL management
-        async function assignRoom() {
-    const path = window.location.pathname;
-    const roomMatch = path.match(/\/room\/(\d+)/);
-    
-    if (roomMatch) {
-        // Direct visit to room URL
-        currentRoomId = parseInt(roomMatch[1]);
-        return currentRoomId;
-    } else {
-        // Base domain visit - assign new room
-        // Get room from database instead of localStorage
-        try {
-            const { data, error } = await supabase.rpc('assign_new_room');
-            if (error) throw error;
-            currentRoomId = data;
+        function assignRoom() {
+            const path = window.location.pathname;
+            const roomMatch = path.match(/\/room\/(\d+)/);
             
-            // Redirect to room URL
-            const newUrl = `/room/${currentRoomId}`;
-            window.history.replaceState({}, '', newUrl);
-            return currentRoomId;
-        } catch (error) {
-            console.error('Database error, using fallback:', error);
-            currentRoomId = 201;
-            
-            // Redirect to room URL
-            const newUrl = `/room/${currentRoomId}`;
-            window.history.replaceState({}, '', newUrl);
-            return currentRoomId;
+            if (roomMatch) {
+                // Direct visit to room URL
+                currentRoomId = parseInt(roomMatch[1]);
+                return currentRoomId;
+            } else {
+                // Base domain visit - assign new room
+                let lastRoomId = localStorage.getItem('lastRoomId');
+                if (!lastRoomId) {
+                    lastRoomId = 200; // Start from 200, first room will be 201
+                } else {
+                    lastRoomId = parseInt(lastRoomId);
+                }
+                
+                currentRoomId = lastRoomId + 1;
+                localStorage.setItem('lastRoomId', currentRoomId);
+                
+                // Redirect to room URL
+                const newUrl = `/room/${currentRoomId}`;
+                window.history.replaceState({}, '', newUrl);
+                
+                return currentRoomId;
+            }
         }
-    }
-}
 
         // Initialize room with Supabase integration
         async function initializeRoom() {
             try {
-                currentRoomId = await assignRoom();
+                currentRoomNumber = await assignRoom();
                 console.log('Room assigned:', currentRoomNumber);
                 
-                document.querySelector('.room-number').textContent = `Room ${currentRoomId}`;
+                document.querySelector('.room-number').textContent = `Room ${currentRoomNumber}`;
                 document.getElementById('roomNumberInForm').textContent = currentRoomNumber;
                 
                 // Start visit tracking if we have Supabase and room ID
@@ -856,7 +846,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             
             // Initialize room with error handling
             try {
-                async function initializeRoom() {
+                await initializeRoom();
             } catch (e) {
                 console.log('Room init failed, using default room 201');
                 document.querySelector('.room-number').textContent = 'Room 201';

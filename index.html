@@ -473,7 +473,7 @@
 <script>
 const SUPABASE_URL = 'https://oaqkkigcoybjpufliazk.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hcWtraWdjb3lianB1ZmxpYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NTAyOTEsImV4cCI6MjA2NDUyNjI5MX0.hGvnVAoyqmgyii1thQe8fzfuoTRoMDmhQ0qPSg4_e0s'
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 </script>
 </head>
 <body>
@@ -852,7 +852,7 @@ try {
             
             // Initialize room with error handling
             try {
-                await initializeRoom();
+                async function initializeRoom() {
             } catch (e) {
                 console.log('Room init failed, using default room 201');
                 document.querySelector('.room-number').textContent = 'Room 201';

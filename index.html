@@ -1299,6 +1299,8 @@ async function endVisitSession() {
 
 function selectAmount(amount) {
     selectedAmount = amount;
+    document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
 }
 
 function processDonation() {

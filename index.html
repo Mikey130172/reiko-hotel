@@ -1035,15 +1035,15 @@ async function loadRealVisitHistory() {
     try {
         const { data, error } = await supabase
             .from('visits')
-            .select('check_in_time, check_out_time, duration_minutes')
-            .eq('room_number', currentRoomId)
-            .order('check_in_time', { ascending: false })
+            .select('check_in, check_out, duration_minutes')
+            .eq('room_id', currentRoomId)
+            .order('check_in', { ascending: false })
             .limit(1);
 
         if (data && data.length > 0) {
             const visit = data[0];
-            const checkIn = new Date(visit.check_in_time).toLocaleString();
-            const checkOut = visit.check_out_time ? new Date(visit.check_out_time).toLocaleString() : 'Still here';
+            const checkIn = new Date(visit.check_in).toLocaleString();
+            const checkOut = visit.check_out ? new Date(visit.check_out).toLocaleString() : 'Still here';
             const duration = visit.duration_minutes ? `${visit.duration_minutes} minutes` : 'Unknown';
             
             visitInfo.textContent = `You last checked in at: ${checkIn}. Checked out at: ${checkOut}. Duration: ${duration}.`;
@@ -1077,14 +1077,14 @@ async function setupDatabase() {
 }
 
 // Save text to database
+// Save text to database - CORRECT VERSION
 async function saveTextEntry(text) {
     try {
         const { error } = await supabase
             .from('text_entries')
             .insert({
                 room_id: currentRoomId || 201,
-                content: text,
-                session_date: new Date().toISOString().split('T')[0]
+                content: text
             });
         
         if (error) console.log('Save error:', error);
@@ -1094,7 +1094,7 @@ async function saveTextEntry(text) {
     }
 }
 
-// Start visit session
+// Start visit session - CORRECT VERSION
 async function startVisitSession() {
     try {
         const { error } = await supabase
@@ -1111,7 +1111,7 @@ async function startVisitSession() {
     }
 }
 
-// End visit session
+// End visit session - CORRECT VERSION
 async function endVisitSession() {
     try {
         const duration = Math.floor((Date.now() - sessionStartTime) / 60000);
@@ -1129,6 +1129,32 @@ async function endVisitSession() {
         else console.log('Visit session ended');
     } catch (error) {
         console.log('Visit end failed:', error);
+    }
+}
+
+// Load visit history - CORRECT VERSION
+async function loadRealVisitHistory() {
+    try {
+        const { data, error } = await supabase
+            .from('visits')
+            .select('check_in, check_out, duration_minutes')
+            .eq('room_id', currentRoomId)
+            .order('check_in', { ascending: false })
+            .limit(1);
+
+        if (data && data.length > 0) {
+            const visit = data[0];
+            const checkIn = new Date(visit.check_in).toLocaleString();
+            const checkOut = visit.check_out ? new Date(visit.check_out).toLocaleString() : 'Still here';
+            const duration = visit.duration_minutes ? `${visit.duration_minutes} minutes` : 'Unknown';
+            
+            visitInfo.textContent = `You last checked in at: ${checkIn}. Checked out at: ${checkOut}. Duration: ${duration}.`;
+        } else {
+            visitInfo.textContent = 'Welcome to your new room. This is your first visit.';
+        }
+    } catch (error) {
+        console.log('Visit history error:', error);
+        visitInfo.textContent = 'Welcome to your room.';
     }
 }
         function drawRoomView() {

@@ -634,11 +634,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             <button onclick="selectAmount(50)" class="amount-btn">$50</button>
         </div>
         
-        <div class="custom-amount">
-            <input type="number" id="customAmount" placeholder="Custom amount" min="1">
-            <button onclick="selectCustomAmount()" class="amount-btn">Custom</button>
-        </div>
-        
         <div class="email-section">
             <input type="email" id="donorEmail" placeholder="Email (optional, for thank you note)">
         </div>
@@ -1301,6 +1296,7 @@ async function endVisitSession() {
         function showSustainPage() {
     donationOverlay.classList.add('show');
 }
+
 function selectAmount(amount) {
     selectedAmount = amount;
     document.getElementById('customAmount').value = '';

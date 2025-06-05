@@ -369,6 +369,90 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             line-height: 1.3;
         }
 
+        /* Donation form styling */
+.donation-amounts {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.amount-btn {
+    font-family: 'Courier New', monospace;
+    font-size: 7px;
+    padding: 5px 8px;
+    border: 1px solid #999;
+    background: #f0f0f0;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 35px;
+}
+
+.amount-btn:hover {
+    background: #e0e0e0;
+}
+
+.amount-btn.selected {
+    background: #ddd;
+    border-color: #777;
+}
+
+.custom-amount {
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.custom-amount input {
+    width: 120px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 7px;
+    color: #333;
+    margin-right: 5px;
+}
+
+.email-section {
+    margin-bottom: 15px;
+}
+
+.email-section input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 7px;
+    color: #333;
+}
+
+.modal-buttons {
+    margin-top: 12px;
+}
+
+.donate-btn, .cancel-btn {
+    font-family: 'Courier New', monospace;
+    font-size: 7px;
+    padding: 5px 12px;
+    margin: 0 6px;
+    border: 1px solid #999;
+    background: #f0f0f0;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.donate-btn {
+    background: #ddd;
+}
+
+.donate-btn:hover, .cancel-btn:hover {
+    background: #e0e0e0;
+}
+
         /* Evolving room view - abstract window */
         .room-view {
             position: absolute;

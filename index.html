@@ -1313,11 +1313,6 @@ const finalAmount = selectedAmount;
         return;
     }
     
-    if (!email) {
-        alert('Please enter your email for a thank you note');
-        return;
-    }
-    
     let stripeUrl = '';
     if (finalAmount == 5) {
         stripeUrl = 'https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00';

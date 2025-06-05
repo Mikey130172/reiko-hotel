@@ -837,6 +837,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             try {
                 await setupDatabase();
                 await initializeRoom();
+                startVisitSession();
             } catch (e) {
                 console.log('Room init failed, using default room 201');
                 document.querySelector('.room-number').textContent = 'Room 201';
@@ -958,6 +959,10 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             const recent = text.toLowerCase().split(' ').slice(-2).join(' ');
             
             keyCount++;
+            // Save every 10 characters typed
+if (keyCount % 10 === 0 && text.trim()) {
+    saveTextEntry(text);
+}
             
             if (currentLine.trim().length > 5) {
                 lastTypedLine = currentLine.trim();
@@ -1051,23 +1056,59 @@ async function loadRealVisitHistory() {
     }
 }
 async function setupDatabase() {
+    // Save text to database
+async function saveTextEntry(text) {
     try {
-        // Test database connection
-        const { error: visitsError } = await supabase
-            .from('visits')
-            .select('*')
-            .limit(1);
-
-        const { error: entriesError } = await supabase
+        const { error } = await supabase
             .from('text_entries')
-            .select('*')
-            .limit(1);
-
-        console.log('Database connection verified');
-        return true;
+            .insert({
+                room_id: currentRoomId || 201,
+                content: text,
+                session_date: new Date().toISOString().split('T')[0]
+            });
+        
+        if (error) console.log('Save error:', error);
+        else console.log('Text saved successfully');
     } catch (error) {
-        console.log('Database not ready, using demo mode:', error);
-        return false;
+        console.log('Database save failed:', error);
+    }
+}
+
+// Start visit session
+async function startVisitSession() {
+    try {
+        const { error } = await supabase
+            .from('visits')
+            .insert({
+                room_id: currentRoomId || 201,
+                check_in: new Date().toISOString()
+            });
+        
+        if (error) console.log('Visit start error:', error);
+        else console.log('Visit session started');
+    } catch (error) {
+        console.log('Visit tracking failed:', error);
+    }
+}
+
+// End visit session
+async function endVisitSession() {
+    try {
+        const duration = Math.floor((Date.now() - sessionStartTime) / 60000);
+        
+        const { error } = await supabase
+            .from('visits')
+            .update({
+                check_out: new Date().toISOString(),
+                duration_minutes: duration
+            })
+            .eq('room_id', currentRoomId || 201)
+            .eq('check_out', null);
+        
+        if (error) console.log('Visit end error:', error);
+        else console.log('Visit session ended');
+    } catch (error) {
+        console.log('Visit end failed:', error);
     }
 }
         function drawRoomView() {
@@ -1260,5 +1301,11 @@ async function setupDatabase() {
             }
         });
     </script>
+    <script>
+// End session on page unload
+window.addEventListener('beforeunload', function() {
+    endVisitSession();
+});
+</script>
 </body>
 </html>

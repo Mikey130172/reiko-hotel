@@ -543,33 +543,19 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             <h2>Sustain the Stillness</h2>
             
             <div style="margin-bottom: 15px;">
-                <button class="form-buttons button" onclick="selectAmount(5)">$5</button>
-                <button class="form-buttons button" onclick="selectAmount(10)">$10</button>
-                <button class="form-buttons button" onclick="selectAmount(25)">$25</button>
-                <button class="form-buttons button" onclick="selectAmount(50)">$50</button>
-            </div>
-            
-            <div class="form-group">
-                <label for="customAmount">Custom Amount ($):</label>
-                <input type="number" id="customAmount" name="customAmount" min="1" max="1000">
-            </div>
-            
-            <div class="form-group">
-                <label for="donorEmail">Your Email (for thank you note):</label>
-                <input type="email" id="donorEmail" name="donorEmail" required>
-            </div>
+    <a href="https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00" target="_blank" class="form-buttons button">$5</a>
+    <a href="https://buy.stripe.com/cNi4gyfGXaUzcCbftxcMM01" target="_blank" class="form-buttons button">$10</a>
+    <a href="https://buy.stripe.com/14A6oG9iz2o37hR959cMM02" target="_blank" class="form-buttons button">$25</a>
+    <a href="https://buy.stripe.com/fZu00i9iz3s745F959cMM03" target="_blank" class="form-buttons button">$50</a>
+</div>
             
             <div class="form-buttons">
-                <button type="button" onclick="closeDonation()">Cancel</button>
-                <button type="button" class="primary" onclick="processDonation()">Donate</button>
-            </div>
-            
-            <div class="privacy-note">
-                Your email is only used to send a thank you note. Payments processed securely via Stripe.
-            </div>
-        </div>
-    </div>
-    
+    <button type="button" onclick="closeDonation()">Cancel</button>
+</div>
+
+<div class="privacy-note">
+    Payments processed securely via Stripe.
+</div>
     
     <!-- Bottom links -->
     <div class="bottom-links">
@@ -586,9 +572,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const donationOverlay = document.getElementById('donationOverlay');
         const roomView = document.getElementById('roomView');
         const roomCanvas = document.getElementById('roomCanvas');
-        
-        let selectedAmount = 0;
-        
+                
         let lastKeyTime = Date.now();
         let keyCount = 0;
         let silenceTimer;
@@ -1253,38 +1237,7 @@ async function loadRealVisitHistory() {
 
         function closeDonation() {
             donationOverlay.classList.remove('show');
-            // Reset form
-            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-            document.getElementById('customAmount').value = '';
-            document.getElementById('donorEmail').value = '';
-            selectedAmount = 0;
         }
-
-        function selectAmount(amount) {
-            selectedAmount = amount;
-            // Clear custom amount
-            document.getElementById('customAmount').value = '';
-            // Update button states
-            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-            event.target.classList.add('selected');
-        }
-
-        function processDonation() {
-            const customAmount = document.getElementById('customAmount').value;
-            const email = document.getElementById('donorEmail').value;
-            
-            // Use custom amount if entered
-            const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
-            
-            if (!finalAmount || finalAmount < 1) {
-                alert('Please select or enter a donation amount');
-                return;
-            }
-            
-            if (!email) {
-                alert('Please enter your email for a thank you note');
-                return;
-            }
             
             // TODO: Integrate with Stripe
             // For now, simulate success
@@ -1338,14 +1291,6 @@ async function loadRealVisitHistory() {
             }
         });
 
-        // Handle custom amount input
-        document.getElementById('customAmount').addEventListener('input', function() {
-            if (this.value) {
-                // Clear selected preset amounts
-                document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-                selectedAmount = 0;
-            }
-        });
     </script>
     <script>
 // End session on page unload

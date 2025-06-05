@@ -1144,32 +1144,6 @@ async function endVisitSession() {
         console.log('Visit end failed:', error);
     }
 }
-
-// Load visit history - CORRECT VERSION
-async function loadRealVisitHistory() {
-    try {
-        const { data, error } = await supabase
-            .from('visits')
-            .select('check_in, check_out, duration_minutes')
-            .eq('room_id', currentRoomId)
-            .order('check_in', { ascending: false })
-            .limit(1);
-
-        if (data && data.length > 0) {
-            const visit = data[0];
-            const checkIn = new Date(visit.check_in).toLocaleString();
-            const checkOut = visit.check_out ? new Date(visit.check_out).toLocaleString() : 'Still here';
-            const duration = visit.duration_minutes ? `${visit.duration_minutes} minutes` : 'Unknown';
-            
-            visitInfo.textContent = `You last checked in at: ${checkIn}. Checked out at: ${checkOut}. Duration: ${duration}.`;
-        } else {
-            visitInfo.textContent = 'Welcome to your new room. This is your first visit.';
-        }
-    } catch (error) {
-        console.log('Visit history error:', error);
-        visitInfo.textContent = 'Welcome to your room.';
-    }
-}
         function drawRoomView() {
             const canvas = roomCanvas;
             const ctx = canvas.getContext('2d');

@@ -1056,7 +1056,27 @@ async function loadRealVisitHistory() {
     }
 }
 async function setupDatabase() {
-    // Save text to database
+    try {
+        // Test database connection
+        const { error: visitsError } = await supabase
+            .from('visits')
+            .select('*')
+            .limit(1);
+
+        const { error: entriesError } = await supabase
+            .from('text_entries')
+            .select('*')
+            .limit(1);
+
+        console.log('Database connection verified');
+        return true;
+    } catch (error) {
+        console.log('Database not ready, using demo mode:', error);
+        return false;
+    }
+}
+
+// Save text to database
 async function saveTextEntry(text) {
     try {
         const { error } = await supabase

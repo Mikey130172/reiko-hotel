@@ -538,58 +538,36 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </div>
     
     <!-- Donation overlay -->
-    <div class="registration-overlay" id="donationOverlay">
-        <div class="registration-form">
-            <h2>Sustain the Stillness</h2>
-            
-          function selectAmount(amount) {
-    selectedAmount = amount;
-    // Clear custom amount
-    document.getElementById('customAmount').value = '';
-    // Update button states
-    document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-    event.target.classList.add('selected');
-}
-
-function processDonation() {
-    const customAmount = document.getElementById('customAmount').value;
-    const email = document.getElementById('donorEmail').value;
-    
-    // Use custom amount if entered
-    const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
-    
-    if (!finalAmount || finalAmount < 1) {
-        alert('Please select or enter a donation amount');
-        return;
-    }
-    
-    if (!email) {
-        alert('Please enter your email for a thank you note');
-        return;
-    }
-    
-    // Redirect to appropriate Stripe link based on amount
-    let stripeUrl = '';
-    if (finalAmount == 5) {
-        stripeUrl = 'https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00';
-    } else if (finalAmount == 10) {
-        stripeUrl = 'https://buy.stripe.com/cNi4gyfGXaUzcCbftxcMM01';
-    } else if (finalAmount == 25) {
-        stripeUrl = 'https://buy.stripe.com/14A6oG9iz2o37hR959cMM02';
-    } else if (finalAmount == 50) {
-        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
-    } else {
-        // For custom amounts, use $50 link (closest we have)
-        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
-    }
-    
-    // Save donation info to database then redirect
-    console.log('Donation:', { amount: finalAmount, email: email, room: currentRoomId });
-    window.open(stripeUrl, '_blank');
-    closeDonation();
-}
-<div class="privacy-note">
-    Payments processed securely via Stripe.
+<div class="registration-overlay" id="donationOverlay">
+    <div class="registration-form">
+        <h2>Sustain the Stillness</h2>
+        <p>Your support keeps this venue alive and free for all who seek quiet moments.</p>
+        
+        <div class="donation-amounts">
+            <button onclick="selectAmount(5)" class="amount-btn">$5</button>
+            <button onclick="selectAmount(10)" class="amount-btn">$10</button>
+            <button onclick="selectAmount(25)" class="amount-btn">$25</button>
+            <button onclick="selectAmount(50)" class="amount-btn">$50</button>
+        </div>
+        
+        <div class="custom-amount">
+            <input type="number" id="customAmount" placeholder="Custom amount" min="1">
+            <button onclick="selectCustomAmount()" class="amount-btn">Custom</button>
+        </div>
+        
+        <div class="email-section">
+            <input type="email" id="donorEmail" placeholder="Email (optional, for thank you note)">
+        </div>
+        
+        <div class="modal-buttons">
+            <button onclick="processDonation()" class="donate-btn">Continue to Payment</button>
+            <button onclick="closeDonation()" class="cancel-btn">Cancel</button>
+        </div>
+        
+        <div class="privacy-note">
+            Payments processed securely via Stripe.
+        </div>
+    </div>
 </div>
     
     <script>
@@ -617,6 +595,7 @@ function processDonation() {
         let currentRoomId = null;
         let wonderShapeTimer = null;
         let dailyResetTimer = null;
+        let selectedAmount = null;
 
         // Childhood wonder moments - extremely rare shapes
         function triggerWonderMoment() {
@@ -883,18 +862,7 @@ function processDonation() {
                 roomView.classList.add('visible');
             }, 10000);
             
-            // Start wonder moments and daily reset checking
-            wonderShapeTimer = setInterval(triggerWonderMoment, 30000);
-            dailyResetTimer = setInterval(checkDailyReset, 60000);
             
-            // Show visit info after loading
-            setTimeout(() => {
-                visitInfo.classList.add('show');
-                setTimeout(() => {
-                    visitInfo.classList.remove('show');
-                }, 8000);
-            }, 2000);
-
             // Focus text area
             setTimeout(() => {
                 textArea.focus();
@@ -910,7 +878,7 @@ function processDonation() {
             }, 10000);
             
             // Start wonder moments and daily reset checking
-            wonderShapeTimer = setInterval(triggerWonderMoment, 3000); // TEMP: Check every 3 seconds
+            wonderShapeTimer = setInterval(triggerWonderMoment, 3000000); // TEMP: Check every 3 seconds
             dailyResetTimer = setInterval(checkDailyReset, 60000); // Check every minute
             
             // Schedule timestamp prompts - 10 and 30 minutes, only twice per session
@@ -1246,6 +1214,9 @@ async function endVisitSession() {
         function showGiftShop() {
             alert('Sustenance Garden - curated books, stationery, and Reiko Hotel merchandise would open here');
         }
+        function showSustainPage() {
+    donationOverlay.classList.add('show');
+}
 function selectAmount(amount) {
     selectedAmount = amount;
     document.getElementById('customAmount').value = '';

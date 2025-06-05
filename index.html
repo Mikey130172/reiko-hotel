@@ -1239,20 +1239,6 @@ async function loadRealVisitHistory() {
             donationOverlay.classList.remove('show');
         }
             
-            // TODO: Integrate with Stripe
-            // For now, simulate success
-            alert(`Thank you for your ${finalAmount} donation! A thank you note will be sent to ${email}`);
-            
-            // Record donation (TODO: save to database)
-            console.log('Donation recorded:', {
-                amount: finalAmount,
-                email: email,
-                timestamp: new Date(),
-                roomId: currentRoomId
-            });
-            
-            closeDonation();
-        }
 
         function showGiftShop() {
             alert('Sustenance Garden - curated books, stationery, and Reiko Hotel merchandise would open here');

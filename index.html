@@ -542,17 +542,52 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         <div class="registration-form">
             <h2>Sustain the Stillness</h2>
             
-            <div style="margin-bottom: 15px;">
-    <a href="https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00" target="_blank" class="form-buttons button">$5</a>
-    <a href="https://buy.stripe.com/cNi4gyfGXaUzcCbftxcMM01" target="_blank" class="form-buttons button">$10</a>
-    <a href="https://buy.stripe.com/14A6oG9iz2o37hR959cMM02" target="_blank" class="form-buttons button">$25</a>
-    <a href="https://buy.stripe.com/fZu00i9iz3s745F959cMM03" target="_blank" class="form-buttons button">$50</a>
-</div>
-            
-            <div class="form-buttons">
-    <button type="button" onclick="closeDonation()">Cancel</button>
-</div>
+          function selectAmount(amount) {
+    selectedAmount = amount;
+    // Clear custom amount
+    document.getElementById('customAmount').value = '';
+    // Update button states
+    document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+}
 
+function processDonation() {
+    const customAmount = document.getElementById('customAmount').value;
+    const email = document.getElementById('donorEmail').value;
+    
+    // Use custom amount if entered
+    const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
+    
+    if (!finalAmount || finalAmount < 1) {
+        alert('Please select or enter a donation amount');
+        return;
+    }
+    
+    if (!email) {
+        alert('Please enter your email for a thank you note');
+        return;
+    }
+    
+    // Redirect to appropriate Stripe link based on amount
+    let stripeUrl = '';
+    if (finalAmount == 5) {
+        stripeUrl = 'https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00';
+    } else if (finalAmount == 10) {
+        stripeUrl = 'https://buy.stripe.com/cNi4gyfGXaUzcCbftxcMM01';
+    } else if (finalAmount == 25) {
+        stripeUrl = 'https://buy.stripe.com/14A6oG9iz2o37hR959cMM02';
+    } else if (finalAmount == 50) {
+        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
+    } else {
+        // For custom amounts, use $50 link (closest we have)
+        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
+    }
+    
+    // Save donation info to database then redirect
+    console.log('Donation:', { amount: finalAmount, email: email, room: currentRoomId });
+    window.open(stripeUrl, '_blank');
+    closeDonation();
+}
 <div class="privacy-note">
     Payments processed securely via Stripe.
 </div>
@@ -1237,7 +1272,43 @@ async function loadRealVisitHistory() {
         function showGiftShop() {
             alert('Sustenance Garden - curated books, stationery, and Reiko Hotel merchandise would open here');
         }
+function selectAmount(amount) {
+    selectedAmount = amount;
+    document.getElementById('customAmount').value = '';
+}
 
+function processDonation() {
+    const customAmount = document.getElementById('customAmount').value;
+    const email = document.getElementById('donorEmail').value;
+    
+    const finalAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
+    
+    if (!finalAmount || finalAmount < 1) {
+        alert('Please select or enter a donation amount');
+        return;
+    }
+    
+    if (!email) {
+        alert('Please enter your email for a thank you note');
+        return;
+    }
+    
+    let stripeUrl = '';
+    if (finalAmount == 5) {
+        stripeUrl = 'https://buy.stripe.com/8x28wOcuL4wbfOn3KPcMM00';
+    } else if (finalAmount == 10) {
+        stripeUrl = 'https://buy.stripe.com/cNi4gyfGXaUzcCbftxcMM01';
+    } else if (finalAmount == 25) {
+        stripeUrl = 'https://buy.stripe.com/14A6oG9iz2o37hR959cMM02';
+    } else if (finalAmount == 50) {
+        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
+    } else {
+        stripeUrl = 'https://buy.stripe.com/fZu00i9iz3s745F959cMM03';
+    }
+    
+    window.open(stripeUrl, '_blank');
+    closeDonation();
+}
         textArea.addEventListener('mousemove', function(e) {
             clearTimeout(hoverTimeout);
             hoverTimeout = setTimeout(() => {

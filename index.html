@@ -676,6 +676,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let wonderShapeTimer = null;
         let dailyResetTimer = null;
         let selectedAmount = null;
+        let currentUser = null;
 
         // Childhood wonder moments - extremely rare shapes
         function triggerWonderMoment() {
@@ -764,6 +765,62 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 }
             }
         }
+        async function checkAuthSession() {
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+            currentUser = session.user;
+            console.log('User logged in:', currentUser.email);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.log('Auth check error:', error);
+        return false;
+    }
+}
+
+async function registerUser(email, password) {
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+            const { error: profileError } = await supabase
+                .from('users')
+                .insert({
+                    id: data.user.id,
+                    email: email,
+                    room_id: currentRoomId,
+                    created_at: new Date().toISOString()
+                });
+
+            currentUser = data.user;
+            return { success: true, user: data.user };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+async function loginUser(email, password) {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        if (error) throw error;
+        currentUser = data.user;
+        return { success: true, user: data.user };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
         function checkDailyReset() {
             const now = new Date();
             const hour = now.getHours();
@@ -1351,17 +1408,44 @@ const finalAmount = selectedAmount;
         });
 
         // Registration form handler
-        document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if (!email || !password) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+    }
+
+    try {
+        const result = await registerUser(email, password);
+        
+        if (result.success) {
+            alert('Key forged successfully! Your journey will now be permanently recorded.');
+            closeRegistration();
+            rememberPrompt.style.display = 'none';
+        } else {
+            const loginResult = await loginUser(email, password);
             
-            if (email && password) {
-                alert('Key forged successfully! Your journey will now be permanently recorded.');
+            if (loginResult.success) {
+                alert('Welcome back! Your room has been restored.');
                 closeRegistration();
                 rememberPrompt.style.display = 'none';
+            } else {
+                alert('Registration failed: ' + (result.error || loginResult.error));
             }
-        });
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+});
 
     </script>
     <script>

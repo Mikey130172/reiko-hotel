@@ -796,7 +796,7 @@ async function registerUser(email, password) {
                     id: data.user.id,
                     email: email,
                     room_id: currentRoomId,
-                    created_at: new Date().toISOString()
+                    create_at: new Date().toISOString()
                 });
 
             currentUser = data.user;

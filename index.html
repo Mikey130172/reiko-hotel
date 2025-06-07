@@ -795,8 +795,9 @@ async function registerUser(email, password) {
                 .insert({
                     id: data.user.id,
                     email: email,
+                    password_hash: 'managed_by_auth',  
                     room_id: currentRoomId,
-                    create_at: new Date().toISOString()
+                    created_at: new Date().toISOString()
                 });
 
             currentUser = data.user;
